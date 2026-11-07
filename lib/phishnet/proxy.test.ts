@@ -113,6 +113,23 @@ test('an HTTP error surfaces a typed PhishnetFetchError', async () => {
   );
 });
 
+test('a rejected fetch is wrapped into a typed PhishnetFetchError with the cause', async () => {
+  const networkError = new TypeError('fetch failed');
+  const deps = {
+    fetch: async () => {
+      throw networkError;
+    },
+    readCache: async () => undefined,
+    writeCache: async () => {},
+    apiKey: 'test-key',
+  };
+
+  await assert.rejects(
+    () => getEntityCached('setlist', '123', deps),
+    (err: unknown) => err instanceof PhishnetFetchError && err.cause === networkError,
+  );
+});
+
 test('query cache miss builds a sorted query string', async () => {
   let capturedUrl = '';
   let capturedKey = '';

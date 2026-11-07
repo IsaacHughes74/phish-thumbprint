@@ -54,7 +54,19 @@ export async function fetchPhishnet<T = unknown>(
     throw new PhishnetFetchError(`phish.net responded with HTTP ${response.status}`);
   }
 
-  const body = (await response.json()) as PhishnetResponse;
+  let body: PhishnetResponse;
+  try {
+    body = (await response.json()) as PhishnetResponse;
+  } catch (cause) {
+    throw new PhishnetFetchError(
+      `phish.net returned invalid JSON: ${cause instanceof Error ? cause.message : 'parse error'}`,
+      { cause },
+    );
+  }
+
+  if (body === null || typeof body !== 'object') {
+    throw new PhishnetFetchError('phish.net returned an unexpected non-object response body');
+  }
 
   if (body.error_code === RATE_LIMIT_CODE) {
     throw new RateLimitError(`phish.net rate limit exceeded (code ${RATE_LIMIT_CODE})`);

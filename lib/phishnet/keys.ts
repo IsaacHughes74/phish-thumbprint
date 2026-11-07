@@ -10,18 +10,21 @@ export function sha256(input: string): string {
 /** Sort and encode query params into a canonical, order-independent string. */
 export function canonicalizeParams(params: Record<string, string>): string {
   return Object.entries(params)
-    .filter(([, value]) => value !== undefined && value !== null && value !== '')
-    .sort(([a], [b]) => a.localeCompare(b))
+    .filter(
+      ([, value]) => value !== undefined && value !== null && value.trim() !== '',
+    )
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
     .join('&');
 }
 
 /** Single-entity lookups key on the phish.net id: `setlist:<id>` / `song:<id>`. */
 export function entityCacheKey(kind: EntityKind, id: string): string {
-  if (id.trim() === '') {
+  const trimmed = id.trim();
+  if (trimmed === '') {
     throw new Error('entityCacheKey requires a non-empty id');
   }
-  return `${kind}:${id}`;
+  return `${kind}:${trimmed}`;
 }
 
 /** List/search/tour-date responses key on a sha256 of their sorted query params. */

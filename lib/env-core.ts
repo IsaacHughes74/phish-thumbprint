@@ -10,7 +10,20 @@ export interface Env {
   /** phish.net v5 API key (read from process.env['PHISHNET_API_KEY']). */
   PHISHNET_API_KEY: string;
   DATABASE_URL: string;
+  /** Better Auth session-signing secret (required to boot). */
+  BETTER_AUTH_SECRET: string;
+  /** Better Auth base URL (required to boot; used for callback/redirect URLs). */
+  BETTER_AUTH_URL: string;
   BUST_OUT_GAP_THRESHOLD: number;
+  /**
+   * Apple Sign-in credentials. Read (not required) at boot; the Apple provider
+   * is disabled (`enabled: false`) when any are missing, so a missing key never
+   * crashes boot — a sign-in attempt surfaces the generic failure copy instead.
+   */
+  APPLE_CLIENT_ID?: string;
+  APPLE_TEAM_ID?: string;
+  APPLE_KEY_ID?: string;
+  APPLE_PRIVATE_KEY?: string;
 }
 
 /**
@@ -21,7 +34,12 @@ export interface Env {
 export type EnvSource = Record<string, string | undefined>;
 
 /** Env var names that must be present for the server to boot. */
-const REQUIRED_VARS = ['PHISHNET_API_KEY', 'DATABASE_URL'] as const;
+const REQUIRED_VARS = [
+  'PHISHNET_API_KEY',
+  'DATABASE_URL',
+  'BETTER_AUTH_SECRET',
+  'BETTER_AUTH_URL',
+] as const;
 
 export function loadEnv(env: EnvSource = process.env): Env {
   const missing = REQUIRED_VARS.filter(
@@ -47,6 +65,12 @@ export function loadEnv(env: EnvSource = process.env): Env {
   return {
     PHISHNET_API_KEY: env['PHISHNET_API_KEY']!,
     DATABASE_URL: env.DATABASE_URL!,
+    BETTER_AUTH_SECRET: env['BETTER_AUTH_SECRET']!,
+    BETTER_AUTH_URL: env.BETTER_AUTH_URL!,
     BUST_OUT_GAP_THRESHOLD: bustOutGapThreshold,
+    APPLE_CLIENT_ID: env.APPLE_CLIENT_ID,
+    APPLE_TEAM_ID: env.APPLE_TEAM_ID,
+    APPLE_KEY_ID: env.APPLE_KEY_ID,
+    APPLE_PRIVATE_KEY: env.APPLE_PRIVATE_KEY,
   };
 }

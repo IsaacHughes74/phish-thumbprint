@@ -4,7 +4,7 @@ import { defineConfig } from 'drizzle-kit';
 // live database. The placeholder URL below keeps the config valid when
 // DATABASE_URL is unset; `db:migrate` (and `db:push`) require a real value.
 export default defineConfig({
-  schema: './db/schema.ts',
+  schema: ['./db/schema.ts', './db/auth-schema.ts'],
   out: './db/migrations',
   dialect: 'postgresql',
   dbCredentials: {

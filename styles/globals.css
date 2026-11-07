@@ -184,6 +184,173 @@ body {
   color: var(--color-accent-warm);
 }
 
+/* ---------- sign-in error note ---------- */
+.signin-error {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-caption-size);
+  color: var(--color-accent-2);
+}
+
+/* ---------- report masthead ---------- */
+.masthead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-gutter-desktop);
+}
+
+.masthead .brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ---------- account menu ---------- */
+.account-menu {
+  position: relative;
+  margin-left: auto;
+}
+
+.account-menu__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-warm);
+  color: var(--color-surface-base);
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.account-menu__avatar svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.account-menu__avatar:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.account-menu__panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  min-width: 240px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  box-shadow: 0 var(--shadow-offset) 0 var(--shadow-color);
+}
+
+.account-menu__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--color-ink-primary);
+  font-family: var(--font-sans);
+  font-size: var(--font-body-strong-size);
+  font-weight: var(--font-body-strong-weight);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-menu__item:hover {
+  background: var(--color-tint);
+}
+
+.account-menu__item:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.account-menu__attr {
+  padding: var(--space-3) var(--space-3) var(--space-2);
+  font-size: var(--font-caption-size);
+  color: var(--color-ink-secondary);
+  border-top: 1px solid var(--color-hairline);
+  margin-top: var(--space-2);
+}
+
+.account-menu__error {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  font-size: var(--font-caption-size);
+  color: var(--color-accent-2);
+}
+
+/* ---------- empty state ---------- */
+.empty {
+  padding: var(--space-6) var(--space-gutter-desktop) var(--space-8);
+}
+
+.empty-well {
+  background: var(--color-surface-raised);
+  border: 2px dashed var(--color-hairline);
+  border-radius: var(--radius-xl);
+  text-align: center;
+  padding: var(--space-8) var(--space-5);
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.empty-well__donut {
+  width: 52px;
+  height: 52px;
+  opacity: 0.9;
+  color: var(--color-ink-primary);
+  margin: 0 auto;
+}
+
+.empty-well__big {
+  font-size: clamp(26px, 4vw, 34px);
+  font-weight: var(--font-display-weight);
+  letter-spacing: -0.02em;
+  color: var(--color-ink-primary);
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.empty-well p {
+  margin: 0 0 var(--space-5);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-ink-secondary);
+  max-width: 46ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-ink-primary);
+  color: var(--color-surface-base);
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-5);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 var(--shadow-offset) 0 var(--shadow-color);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 767px) {
   .topbar {
@@ -198,5 +365,13 @@ body {
     flex-direction: column;
     align-items: flex-start;
     padding: var(--space-4) var(--space-gutter-mobile);
+  }
+
+  .masthead {
+    padding: var(--space-4) var(--space-gutter-mobile);
+  }
+
+  .empty {
+    padding: var(--space-5) var(--space-gutter-mobile) var(--space-6);
   }
 }

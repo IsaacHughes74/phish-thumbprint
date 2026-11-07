@@ -7,8 +7,8 @@
 export const DEFAULT_BUST_OUT_GAP_THRESHOLD = 50;
 
 export interface Env {
-  /** phish.net v5 API key (read from process.env['X-API-KEY']). */
-  X_API_KEY: string;
+  /** phish.net v5 API key (read from process.env['PHISHNET_API_KEY']). */
+  PHISHNET_API_KEY: string;
   DATABASE_URL: string;
   BUST_OUT_GAP_THRESHOLD: number;
 }
@@ -21,7 +21,7 @@ export interface Env {
 export type EnvSource = Record<string, string | undefined>;
 
 /** Env var names that must be present for the server to boot. */
-const REQUIRED_VARS = ['X-API-KEY', 'DATABASE_URL'] as const;
+const REQUIRED_VARS = ['PHISHNET_API_KEY', 'DATABASE_URL'] as const;
 
 export function loadEnv(env: EnvSource = process.env): Env {
   const missing = REQUIRED_VARS.filter(
@@ -45,7 +45,7 @@ export function loadEnv(env: EnvSource = process.env): Env {
   }
 
   return {
-    X_API_KEY: env['X-API-KEY']!,
+    PHISHNET_API_KEY: env['PHISHNET_API_KEY']!,
     DATABASE_URL: env.DATABASE_URL!,
     BUST_OUT_GAP_THRESHOLD: bustOutGapThreshold,
   };

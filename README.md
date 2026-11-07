@@ -25,8 +25,8 @@ A personal, profile-first reading of a Phish fan's concert history — "psychede
 
 Copy `.env.example` to `.env` (or set in Vercel):
 
-- `X-API-KEY` — phish.net v5 key (server-only; sent as the `X-API-KEY` header)
+- `PHISHNET_API_KEY` — phish.net v5 key (server-only; sent as the `X-API-KEY` header)
 - `DATABASE_URL` — Neon Postgres connection string
 - `BUST_OUT_GAP_THRESHOLD` — bust-out gap threshold (default 50)
 
-Missing `X-API-KEY` or `DATABASE_URL` fails fast at server start (`instrumentation.ts`).
+Missing `PHISHNET_API_KEY` or `DATABASE_URL` fails fast at server start (`instrumentation.ts`).

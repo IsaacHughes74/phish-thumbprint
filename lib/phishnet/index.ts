@@ -10,7 +10,7 @@ const proxyDeps = {
   fetch: fetchFn,
   readCache,
   writeCache,
-  apiKey: env.X_API_KEY,
+  apiKey: env.PHISHNET_API_KEY,
 };
 
 /** phish.net setlist by show id (server-only, cached). */

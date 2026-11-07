@@ -1,0 +1,202 @@
+@import './tokens.css';
+
+/* ----------------------------------------------------------------------------
+   Bespoke component CSS. Every color, radius, and spacing value is referenced
+   as a CSS custom property from tokens.css — nothing is re-hard-coded here.
+   -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--color-surface-base);
+  color: var(--color-ink-primary);
+  font-family: var(--font-sans);
+  line-height: var(--font-body-line-height);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.screen {
+  flex: 1;
+  background-image:
+    radial-gradient(
+      circle at 78% 12%,
+      color-mix(in srgb, var(--color-accent) 7%, transparent) 0,
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 16% 88%,
+      color-mix(in srgb, var(--color-accent-2) 5%, transparent) 0,
+      transparent 32%
+    );
+}
+
+/* ---------- topbar ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-gutter-desktop);
+}
+
+.brand-mark {
+  display: block;
+  color: var(--color-ink-primary);
+}
+
+.brand-wordmark {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--color-ink-primary);
+}
+
+/* ---------- hero ---------- */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-5) var(--space-gutter-desktop) var(--space-8);
+  max-width: 820px;
+  margin: 0 auto;
+  min-height: 560px;
+}
+
+.brand-mark--hero {
+  width: 72px;
+  height: 72px;
+  transform: rotate(-4deg);
+  margin-bottom: var(--space-6);
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: var(--font-display-size);
+  font-weight: var(--font-display-weight);
+  line-height: var(--font-display-line-height);
+  letter-spacing: var(--font-display-letter-spacing);
+  color: var(--color-ink-primary);
+}
+
+.hero__pitch {
+  margin: var(--space-5) 0 0;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--color-ink-primary);
+  max-width: 26ch;
+}
+
+.hero__sub {
+  margin: var(--space-4) 0 0;
+  font-size: 15px;
+  line-height: var(--font-body-line-height);
+  color: var(--color-ink-secondary);
+  max-width: 52ch;
+}
+
+.hero__never {
+  color: var(--color-accent-2);
+}
+
+.hero__legal {
+  margin: var(--space-4) 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-ink-secondary);
+  max-width: 52ch;
+}
+
+/* ---------- sign-in button ---------- */
+.signin {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-6) 0 0;
+  background: var(--color-ink-primary);
+  color: var(--color-surface-base);
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-5);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 var(--shadow-offset) 0 var(--shadow-color);
+}
+
+.signin svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+.signin:focus-visible,
+.donate-footer__donate:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---------- donate footer ---------- */
+.donate-footer {
+  border-top: 1px solid var(--color-hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-gutter-desktop);
+  margin-top: auto;
+}
+
+.donate-footer__attr {
+  font-size: var(--font-caption-size);
+  color: var(--color-ink-secondary);
+}
+
+.donate-footer__donate {
+  font-size: var(--font-caption-size);
+  color: var(--color-accent-warm);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.donate-footer__donate:hover {
+  color: var(--color-accent-warm);
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 767px) {
+  .topbar {
+    padding: var(--space-4) var(--space-gutter-mobile);
+  }
+
+  .hero {
+    padding: var(--space-4) var(--space-gutter-mobile) var(--space-6);
+  }
+
+  .donate-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--space-4) var(--space-gutter-mobile);
+  }
+}

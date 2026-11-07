@@ -16,16 +16,8 @@ export default function LandingPage() {
 
       <main className="hero">
         <BrandMark size={72} className="brand-mark brand-mark--hero" />
-        <h1>
-          Your Phish history,
-          <br />
-          added up and read back.
-        </h1>
-        <p className="hero__pitch">Every show you’ve seen becomes a portrait.</p>
-        <p className="hero__sub">
-          Most-heard songs, the bust-outs you were in the room for, the venues you keep coming
-          back to, and <span className="hero__never">the songs you’re still chasing</span>.
-        </p>
+        <h1>Your thumbprint on Phish.</h1>
+        <p className="hero__pitch">Drawn from your shows.</p>
         <SignInButton />
         <p className="hero__legal">
           Free and non-commercial. Built on the Phish.net setlist archive. Apple sign-in only —

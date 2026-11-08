@@ -1,31 +1,43 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { canonicalizeParams, entityCacheKey, queryCacheKey } from './keys';
+import { buildRequestPath, canonicalizeParams, pathCacheKey, sha256 } from './keys';
 
-test('entityCacheKey keys single-entity lookups on the phish.net id', () => {
-  assert.equal(entityCacheKey('setlist', '1252684412'), 'setlist:1252684412');
-  assert.equal(entityCacheKey('song', '139'), 'song:139');
+test('buildRequestPath builds a column-filtered .json path', () => {
+  assert.equal(
+    buildRequestPath('setlists', 'showid', '1252684412'),
+    '/setlists/showid/1252684412.json',
+  );
 });
 
-test('entityCacheKey rejects an empty id', () => {
-  assert.throws(() => entityCacheKey('setlist', '   '), /non-empty id/);
+test('buildRequestPath appends canonical order params', () => {
+  assert.equal(
+    buildRequestPath('shows', 'artist', 'phish', { order_by: 'showdate' }),
+    '/shows/artist/phish.json?order_by=showdate',
+  );
 });
 
-test('queryCacheKey is order-independent (sorted params -> sha256)', () => {
-  const a = queryCacheKey('shows', { year: '2025', venue: 'Madison Square Garden' });
-  const b = queryCacheKey('shows', { venue: 'Madison Square Garden', year: '2025' });
-  assert.equal(a, b);
+test('buildRequestPath ignores empty order params', () => {
+  assert.equal(
+    buildRequestPath('shows', 'artist', 'phish', { order_by: 'showdate', direction: '' }),
+    '/shows/artist/phish.json?order_by=showdate',
+  );
 });
 
-test('queryCacheKey differs for different params', () => {
-  const a = queryCacheKey('shows', { year: '2025' });
-  const b = queryCacheKey('shows', { year: '2024' });
+test('pathCacheKey is a method-prefixed sha256 of the full path', () => {
+  const key = pathCacheKey('setlists', 'showid', '123');
+  assert.match(key, /^setlists:[0-9a-f]{64}$/);
+  assert.equal(key, `setlists:${sha256('/setlists/showid/123.json')}`);
+});
+
+test('pathCacheKey differs for different column values', () => {
+  const a = pathCacheKey('shows', 'showdate', '1997-11-22');
+  const b = pathCacheKey('shows', 'showdate', '1997-11-23');
   assert.notEqual(a, b);
 });
 
-test('queryCacheKey ignores empty param values', () => {
-  const a = queryCacheKey('shows', { year: '2025', venue: '' });
-  const b = queryCacheKey('shows', { year: '2025' });
+test('pathCacheKey is order-independent for order params', () => {
+  const a = pathCacheKey('shows', 'artist', 'phish', { order_by: 'showdate', direction: 'ASC' });
+  const b = pathCacheKey('shows', 'artist', 'phish', { direction: 'ASC', order_by: 'showdate' });
   assert.equal(a, b);
 });
 

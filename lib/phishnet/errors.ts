@@ -5,6 +5,12 @@
 
 export const RATE_LIMIT_CODE = 4;
 
+/**
+ * phish.net v5 code for "no data matched your query". Distinct from a real
+ * failure: a no-match is a normal result and the proxy surfaces it as `[]`.
+ */
+export const NO_MATCH_ERROR_CODE = 11;
+
 export class PhishnetError extends Error {
   constructor(message: string, options?: ErrorOptions) {
     super(message, options);

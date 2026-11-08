@@ -1,4 +1,9 @@
-import { PhishnetFetchError, RateLimitError, RATE_LIMIT_CODE } from './errors';
+import {
+  NO_MATCH_ERROR_CODE,
+  PhishnetFetchError,
+  RateLimitError,
+  RATE_LIMIT_CODE,
+} from './errors';
 
 export const PHISHNET_BASE_URL = 'https://api.phish.net/v5';
 
@@ -8,11 +13,15 @@ export type FetchLike = (
   init?: RequestInit,
 ) => Promise<Response>;
 
+/**
+ * phish.net v5 response envelope. On success `error` is `0` (the JSON literal
+ * `false` also appears in some responses, so it is treated as success too);
+ * on failure it is a numeric code (see `errors.ts`). `data` is always a list.
+ */
 export interface PhishnetResponse {
-  success: number;
-  data: unknown;
-  error_code: number;
+  error: number | boolean;
   error_message?: string;
+  data: unknown;
 }
 
 export interface PhishnetClientDeps {
@@ -23,9 +32,10 @@ export interface PhishnetClientDeps {
 
 /**
  * The single fetch path to phish.net v5 (AD-3): the key is sent server-side as
- * an `X-API-KEY` header. phish.net code 4 is normalized into a RateLimitError;
- * any other failure (network, HTTP, non-zero error_code) is surfaced as a
- * typed PhishnetFetchError.
+ * an `X-API-KEY` header. Code `4` is normalized into a RateLimitError; code
+ * `11` ("no data matched") is a normal empty result and returns `[]`; any
+ * other non-zero error is surfaced as a typed PhishnetFetchError with its code
+ * and message.
  */
 export async function fetchPhishnet<T = unknown>(
   path: string,
@@ -68,13 +78,23 @@ export async function fetchPhishnet<T = unknown>(
     throw new PhishnetFetchError('phish.net returned an unexpected non-object response body');
   }
 
-  if (body.error_code === RATE_LIMIT_CODE) {
+  const error = body.error;
+
+  if (error === RATE_LIMIT_CODE) {
     throw new RateLimitError(`phish.net rate limit exceeded (code ${RATE_LIMIT_CODE})`);
   }
 
-  if (body.success === 0) {
+  // "No data matched" is a normal outcome for a search or a show with no
+  // setlist rows — surface it as an empty list, not an error (AD-3 / FR-5).
+  if (error === NO_MATCH_ERROR_CODE) {
+    return [] as unknown as T;
+  }
+
+  // Success: `error` is `0`, or the JSON literal `false` (both documented by
+  // phish.net for a healthy response).
+  if (error !== 0 && error !== false) {
     throw new PhishnetFetchError(
-      `phish.net error code ${body.error_code}: ${body.error_message ?? 'unknown error'}`,
+      `phish.net error code ${String(error)}: ${body.error_message ?? 'unknown error'}`,
     );
   }
 

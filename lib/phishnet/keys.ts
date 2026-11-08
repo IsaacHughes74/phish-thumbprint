@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
 
-/** Entity kinds whose cache keys are the phish.net id (AD-3). */
-export type EntityKind = 'setlist' | 'song';
-
 export function sha256(input: string): string {
   return createHash('sha256').update(input).digest('hex');
 }
 
-/** Sort and encode query params into a canonical, order-independent string. */
+/**
+ * Sort and encode order params into a canonical, order-independent string
+ * (`order_by`, `direction`, `limit`). Used both to build the request URL and
+ * to key the cache so two equivalent requests share one entry (AD-3).
+ */
 export function canonicalizeParams(params: Record<string, string>): string {
   return Object.entries(params)
     .filter(
@@ -18,16 +19,30 @@ export function canonicalizeParams(params: Record<string, string>): string {
     .join('&');
 }
 
-/** Single-entity lookups key on the phish.net id: `setlist:<id>` / `song:<id>`. */
-export function entityCacheKey(kind: EntityKind, id: string): string {
-  const trimmed = id.trim();
-  if (trimmed === '') {
-    throw new Error('entityCacheKey requires a non-empty id');
-  }
-  return `${kind}:${trimmed}`;
+/**
+ * Build the phish.net v5 request path for a single-column exact match:
+ * `/{method}/{column}/{value}.json` plus any canonical order params.
+ */
+export function buildRequestPath(
+  method: string,
+  column: string,
+  value: string,
+  params: Record<string, string> = {},
+): string {
+  const query = canonicalizeParams(params);
+  return `/${method}/${column}/${value}.json${query ? `?${query}` : ''}`;
 }
 
-/** List/search/tour-date responses key on a sha256 of their sorted query params. */
-export function queryCacheKey(kind: string, params: Record<string, string>): string {
-  return `${kind}:${sha256(canonicalizeParams(params))}`;
+/**
+ * Cache key for a path request: a sha256 of the full request path (method +
+ * column + value + order params), namespaced by method. Two requests that hit
+ * the same phish.net endpoint share one cache row.
+ */
+export function pathCacheKey(
+  method: string,
+  column: string,
+  value: string,
+  params: Record<string, string> = {},
+): string {
+  return `${method}:${sha256(buildRequestPath(method, column, value, params))}`;
 }

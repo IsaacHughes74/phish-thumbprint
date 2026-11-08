@@ -1,10 +1,5 @@
 import { fetchPhishnet, type FetchLike } from './client';
-import { canonicalizeParams, entityCacheKey, queryCacheKey, type EntityKind } from './keys';
-
-const ENTITY_PATHS: Record<EntityKind, string> = {
-  setlist: '/setlists',
-  song: '/songs',
-};
+import { buildRequestPath, pathCacheKey } from './keys';
 
 export interface PhishnetProxyDeps {
   fetch: FetchLike;
@@ -15,50 +10,27 @@ export interface PhishnetProxyDeps {
 }
 
 /**
- * Read-through proxy for single-entity lookups (AD-3): cache hit returns the
- * cached JSON without a phish.net call; a miss fetches, stores, and returns.
+ * Read-through proxy for phish.net v5 path requests (AD-3): a cache hit
+ * returns the cached JSON without a phish.net call; a miss fetches the path
+ * (`/{method}/{column}/{value}.json`), stores, and returns. All calls funnel
+ * through `fetchPhishnet`, so rate limits (code 4) and no-match (code 11) are
+ * normalized in one place.
  */
-export async function getEntityCached(
-  kind: EntityKind,
-  id: string,
-  deps: PhishnetProxyDeps,
-): Promise<unknown> {
-  const key = entityCacheKey(kind, id);
-
-  const cached = await deps.readCache(key);
-  if (cached !== undefined) {
-    return cached;
-  }
-
-  const data = await fetchPhishnet(`${ENTITY_PATHS[kind]}/${id}`, {
-    fetch: deps.fetch,
-    apiKey: deps.apiKey,
-    baseUrl: deps.baseUrl,
-  });
-
-  await deps.writeCache(key, data);
-  return data;
-}
-
-/**
- * Read-through proxy for list/search/tour-date responses (AD-3), keyed on a
- * sha256 of their sorted query params.
- */
-export async function getQueryCached(
-  kind: string,
+export async function getPathCached(
+  method: string,
+  column: string,
+  value: string,
   params: Record<string, string>,
   deps: PhishnetProxyDeps,
 ): Promise<unknown> {
-  const key = queryCacheKey(kind, params);
+  const key = pathCacheKey(method, column, value, params);
 
   const cached = await deps.readCache(key);
   if (cached !== undefined) {
     return cached;
   }
 
-  const query = canonicalizeParams(params);
-  const path = `/${kind}${query ? `?${query}` : ''}`;
-
+  const path = buildRequestPath(method, column, value, params);
   const data = await fetchPhishnet(path, {
     fetch: deps.fetch,
     apiKey: deps.apiKey,

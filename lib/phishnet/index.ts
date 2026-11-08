@@ -4,7 +4,7 @@ import { readCache, writeCache } from './cache';
 import { getPathCached } from './proxy';
 import type { FetchLike } from './client';
 import { searchShows as filterShows } from './search';
-import type { SetlistRow, ShowRecord } from './types';
+import type { SetlistRow, ShowRecord, SongRecord } from './types';
 
 const fetchFn: FetchLike = (input, init) => globalThis.fetch(input, init);
 
@@ -40,6 +40,21 @@ export function getShowsCatalog(): Promise<ShowRecord[]> {
   ) as Promise<ShowRecord[]>;
 }
 
+/**
+ * The full Phish song catalog, ordered by recency (server-only, cached ≤24h).
+ * Serves the never-heard derivation: one cached request, filtered in-process
+ * against the Phan's heard set (AD-2), never a per-song phish.net call.
+ */
+export function getSongsCatalog(): Promise<SongRecord[]> {
+  return getPathCached(
+    'songs',
+    'artist',
+    'phish',
+    { order_by: 'last_played', direction: 'DESC' },
+    proxyDeps,
+  ) as Promise<SongRecord[]>;
+}
+
 /** Search the Phish catalog by a date/venue/city/state substring (server-only). */
 export async function searchShows(query: string): Promise<ShowRecord[]> {
   if (!query.trim()) {
@@ -64,4 +79,4 @@ export {
   sha256,
 } from './keys';
 export { matchesShowQuery, toMMDDYY } from './search';
-export type { ShowRecord, SetlistRow } from './types';
+export type { ShowRecord, SetlistRow, SongRecord } from './types';

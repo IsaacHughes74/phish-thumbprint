@@ -1,20 +1,21 @@
+import { Suspense } from 'react';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { auth, resolveSessionToUserId } from '../../lib/auth';
 import { getShowHistory } from '../../lib/history';
-import { toMMDDYY } from '../../lib/phishnet/search';
 import { BrandMark } from '../../components/brand-mark';
 import { AccountMenu } from '../../components/account-menu';
 import { EmptyState } from '../../components/empty-state';
-import { ShowHistoryStrip } from '../../components/show-history-strip';
+import { ReportBody } from '../../components/report-body';
+import { ReportSkeleton } from '../../components/report-skeleton';
 
 /**
  * Session-gated Report (AD-5, no middleware wall in v1). An unauthenticated
- * request redirects to the Landing `/`. A signed-in Phan resolves to the app
- * `USER.id` and sees the empty Report (masthead + "Add your first show" empty
- * state) until they record their first Show, after which the compact
- * Show-history strip renders in its place. The donate footer lives in the root
- * layout.
+ * request redirects to the Landing `/`. A signed-in Phan with no Shows sees the
+ * "Add your first show" empty state; otherwise the Report body streams in
+ * behind a skeleton (EXPERIENCE.md §Cold load). The masthead and the empty
+ * check stay in the static shell; the heavy phish.net work lives inside the
+ * `<Suspense>` boundary in `ReportBody`.
  */
 export default async function ReportPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -23,15 +24,12 @@ export default async function ReportPage() {
     redirect('/');
   }
 
-  // Resolve the session subject to the app USER.id (AD-5); null means no Apple
-  // account is attached, which cannot happen for a valid Apple session.
   const userId = await resolveSessionToUserId(session.session);
   if (!userId) {
     redirect('/');
   }
 
   const history = await getShowHistory(userId);
-  const showIds = history.map((row) => row.phishnetShowId);
 
   return (
     <div className="screen">
@@ -47,11 +45,9 @@ export default async function ReportPage() {
         {history.length === 0 ? (
           <EmptyState />
         ) : (
-          <ShowHistoryStrip
-            count={history.length}
-            since={toMMDDYY(history[history.length - 1].showDate)}
-            showIds={showIds}
-          />
+          <Suspense fallback={<ReportSkeleton />}>
+            <ReportBody history={history} />
+          </Suspense>
         )}
       </main>
     </div>

@@ -27,5 +27,19 @@ export interface SetlistRow {
   transition?: string;
   footnote?: string;
   gap?: number | string;
+  /** Tour name, sourced for the "shows by tour" trend (FR-12). */
+  tourname?: string;
+  [key: string]: unknown;
+}
+
+/** A `songs` row from the artist catalog (`/songs/artist/phish.json`). */
+export interface SongRecord {
+  songid: number | string;
+  song: string;
+  slug?: string;
+  times_played: number | string;
+  last_played: string;
+  gap?: number | string;
+  debut?: string;
   [key: string]: unknown;
 }

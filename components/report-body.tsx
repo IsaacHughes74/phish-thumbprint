@@ -1,5 +1,7 @@
 import type { ShowHistoryRow } from '../lib/history-core';
 import { toMMDDYY } from '../lib/phishnet/search';
+import { getTailoredPicks } from '../lib/recommend';
+import type { TailoredPick } from '../lib/recommend-core';
 import { getReport } from '../lib/stats';
 import type { TrendBucket, TrendSong } from '../lib/stats-core';
 import { ShowHistoryStrip } from './show-history-strip';
@@ -14,6 +16,7 @@ const SECTIONS: SectionNavItem[] = [
   { id: 'never-heard', label: 'Never-heard songs' },
   { id: 'setlist-trends', label: 'Setlist trends' },
   { id: 'venues', label: 'Venues' },
+  { id: 'tailored-picks', label: 'Tailored Picks' },
 ];
 
 const MOST_HEARD_LIMIT = 8;
@@ -110,18 +113,31 @@ function VenueRow({ name, count }: { name: string; count: number }) {
   );
 }
 
+function TailoredPickRow({ pick }: { pick: TailoredPick }) {
+  return (
+    <div className="tailored-pick">
+      <p className="tailored-pick__tag">Pick</p>
+      <span className="tailored-pick__title">{pick.song}</span>
+      <p className="tailored-pick__why">{pick.why}</p>
+    </div>
+  );
+}
+
 interface ReportBodyProps {
   history: ShowHistoryRow[];
 }
 
 /**
- * The Report surface (CAP-3 / FR-9..14): hero, stat-band, sticky section-nav,
- * and the two-rail grid of the five stat-card modules. Server-rendered; derives
- * everything from `getReport` (AD-2), then hands plain data to the client
- * islands (song-row expand, section-nav scroll-spy) as props (AD-1).
+ * The Report surface (CAP-3 / CAP-4 / FR-9..17): hero, stat-band, sticky
+ * section-nav, and the two-rail grid of stat-card modules (including Tailored
+ * Picks). Server-rendered; derives stats from `getReport` and picks from
+ * `getTailoredPicks` (AD-2 / AD-4), then hands plain data to the client islands
+ * (song-row expand, section-nav scroll-spy) as props (AD-1).
  */
 export async function ReportBody({ history }: ReportBodyProps) {
-  const { report, degraded } = await getReport(history);
+  const { report, degraded: reportDegraded } = await getReport(history);
+  const { picks, degraded: picksDegraded } = await getTailoredPicks(history);
+  const degraded = reportDegraded || picksDegraded;
 
   const earliest = history[history.length - 1];
   const since = earliest ? toMMDDYY(earliest.showDate) : null;
@@ -266,6 +282,16 @@ export async function ReportBody({ history }: ReportBodyProps) {
                   </div>
                 ) : null}
               </>
+            )}
+          </StatCard>
+
+          <StatCard id="tailored-picks" title="Tailored Picks">
+            {picks.length === 0 ? (
+              <ModuleEmpty>
+                No picks yet &mdash; keep logging shows and they&rsquo;ll surface.
+              </ModuleEmpty>
+            ) : (
+              picks.map((pick) => <TailoredPickRow key={pick.songid} pick={pick} />)
             )}
           </StatCard>
         </div>

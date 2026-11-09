@@ -19,7 +19,7 @@ export function ReportSkeleton() {
       </div>
       <div className="report-skeleton__strip" />
       <div className="report-skeleton__nav">
-        {[0, 1, 2, 3, 4, 5].map((index) => (
+        {[0, 1, 2, 3, 4, 5, 6].map((index) => (
           <div key={index} className="report-skeleton__chip" />
         ))}
       </div>
@@ -30,6 +30,7 @@ export function ReportSkeleton() {
           <div className="report-skeleton__card" />
         </div>
         <div className="report-skeleton__rail">
+          <div className="report-skeleton__card" />
           <div className="report-skeleton__card" />
           <div className="report-skeleton__card" />
           <div className="report-skeleton__card" />

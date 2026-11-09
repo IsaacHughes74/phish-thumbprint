@@ -1,4 +1,4 @@
-import type { SetlistRow, SongRecord } from './phishnet/types';
+import type { SetlistRow, ShowRecord, SongRecord } from './phishnet/types';
 
 /**
  * Pure, dependency-free core of the recommendation layer (AD-4). Split from
@@ -48,6 +48,23 @@ export interface RankCandidate {
 
 /** One surface-ready recommendation: the song plus its one-line "why". */
 export interface TailoredPick {
+  songid: string;
+  song: string;
+  why: string;
+}
+
+/**
+ * The inferred Chase List anchor (AD-2: inferred at read, never persisted).
+ * `show` = a known upcoming show; `tour` = no upcoming show, but a past show's
+ * tour; `none` = the shows catalog was empty/unavailable.
+ */
+export type ChaseAnchor =
+  | { kind: 'show'; showdate: string; venue: string; tourName: string }
+  | { kind: 'tour'; tourName: string }
+  | { kind: 'none' };
+
+/** One surface-ready Chase List entry: a never-heard song plus its "why". */
+export interface ChaseEntry {
   songid: string;
   song: string;
   why: string;
@@ -185,16 +202,29 @@ function eraMatchScore(candidate: RankCandidate, profile: TasteProfile): number 
  * candidate's debut decade ∈ the profile's heard decades — DESC, then (2)
  * `last_played` DESC, then (3) `times_played` DESC, then (4) `song` ASC.
  * Tailored Picks and Chase List both rank through here; never mutate the input.
+ *
+ * When `preferEra` is `false` (Chase List), the era-match primary is skipped and
+ * candidates sort purely by play-likelihood (`last_played` DESC → `times_played`
+ * DESC → `song` ASC), a deterministic proxy for "likely at the next show".
  */
+export interface RankOptions {
+  /** Prefer era-match as the primary sort key. Defaults to `true` (Tailored Picks). */
+  preferEra?: boolean;
+}
+
 export function rankCandidates(
   candidates: RankCandidate[],
   profile: TasteProfile,
+  options: RankOptions = {},
 ): RankCandidate[] {
+  const { preferEra = true } = options;
   return [...candidates].sort((a, b) => {
-    const eraA = eraMatchScore(a, profile);
-    const eraB = eraMatchScore(b, profile);
-    if (eraA !== eraB) {
-      return eraB - eraA; // era-match first
+    if (preferEra) {
+      const eraA = eraMatchScore(a, profile);
+      const eraB = eraMatchScore(b, profile);
+      if (eraA !== eraB) {
+        return eraB - eraA; // era-match first
+      }
     }
     const last = b.lastPlayed.localeCompare(a.lastPlayed);
     if (last !== 0) {
@@ -281,4 +311,121 @@ export function tailoredPicks(
       song: candidate.song,
       why: whyWriter.write(candidate, profile),
     }));
+}
+
+/**
+ * The deterministic Chase List writer (AD-4). Cites play-likelihood facts only —
+ * all-time frequency (`times_played`) and recency (`last_played`) — never debut
+ * or era (that's `deterministicWhyWriter`'s job), never generic praise. Distinct
+ * from `deterministicWhyWriter` on purpose: the Chase List "why" answers "why is
+ * this likely at the next show", not "why does this fit your taste".
+ */
+export const chaseWhyWriter: WhyWriter = {
+  write(candidate) {
+    const lastPlayedYear = yearOf(candidate.lastPlayed);
+
+    if (candidate.timesPlayed > 0) {
+      if (lastPlayedYear !== null) {
+        return `You've never caught it live \u2014 played ${candidate.timesPlayed} times, last heard in ${lastPlayedYear}.`;
+      }
+      return `You've never caught it live \u2014 played ${candidate.timesPlayed} times.`;
+    }
+
+    if (lastPlayedYear !== null) {
+      return `You've never caught it live \u2014 last played ${lastPlayedYear}.`;
+    }
+    return `You've never caught it live.`;
+  },
+};
+
+/**
+ * Infer the Chase List anchor from the phish.net shows catalog (AD-2: inferred at
+ * read, never persisted). Pure and date-based: the earliest show with
+ * `showdate >= today` is the next show; otherwise the most recent show's tour
+ * (`tour_name`) is "this tour"; otherwise (empty catalog) `none`. `today` is the
+ * server's UTC date, passed in so the core stays deterministic and testable.
+ */
+export function inferChaseAnchor(shows: ShowRecord[], today: string): ChaseAnchor {
+  let upcoming: ShowRecord | null = null;
+  let recent: ShowRecord | null = null;
+
+  for (const show of shows) {
+    const showdate = toStr(show.showdate);
+    if (showdate === '') {
+      continue;
+    }
+    if (showdate >= today) {
+      if (upcoming === null || showdate < toStr(upcoming.showdate)) {
+        upcoming = show;
+      }
+    }
+    if (recent === null || showdate > toStr(recent.showdate)) {
+      recent = show;
+    }
+  }
+
+  if (upcoming !== null) {
+    return {
+      kind: 'show',
+      showdate: toStr(upcoming.showdate),
+      venue: toStr(upcoming.venue),
+      tourName: toStr(upcoming.tour_name),
+    };
+  }
+
+  if (recent !== null) {
+    return { kind: 'tour', tourName: toStr(recent.tour_name) };
+  }
+
+  return { kind: 'none' };
+}
+
+/**
+ * The Chase List caller (CAP-5 / FR-18..19). Builds candidates from the song
+ * catalog, keeping only never-heard songs (`!hasHeardLive`, heard count 0 — FR-19).
+ * Ranks them through the shared `rankCandidates` with `preferEra: false` (pure
+ * play-likelihood), takes the top `TOP_N`, and writes each entry's "why" through
+ * the injected `WhyWriter`. The anchor is inferred from `shows` + `today`.
+ */
+export function chaseList(
+  profile: TasteProfile,
+  songCatalog: SongRecord[],
+  shows: ShowRecord[],
+  today: string,
+  whyWriter: WhyWriter = chaseWhyWriter,
+): { anchor: ChaseAnchor; entries: ChaseEntry[] } {
+  const anchor = inferChaseAnchor(shows, today);
+
+  // No heard songs => no meaningful "never-heard" set to chase (mirrors
+  // `tailoredPicks`'s guard): return an empty list so a degraded (empty-heard)
+  // profile never yields TOP_N false "never caught it live" entries. The anchor
+  // is still returned so the surface can show its note.
+  if (profile.uniqueSongs === 0) {
+    return { anchor, entries: [] };
+  }
+
+  const candidates: RankCandidate[] = [];
+  for (const record of songCatalog) {
+    const songid = toStr(record.songid);
+    if (!songid || hasHeardLive(profile, songid)) {
+      continue;
+    }
+    candidates.push({
+      songid,
+      song: toStr(record.song) || '(unknown song)',
+      debut: toStr(record.debut),
+      lastPlayed: toStr(record.last_played),
+      timesPlayed: toNum(record.times_played) ?? 0,
+    });
+  }
+
+  const entries: ChaseEntry[] = rankCandidates(candidates, profile, { preferEra: false })
+    .slice(0, TOP_N)
+    .map((candidate) => ({
+      songid: candidate.songid,
+      song: candidate.song,
+      why: whyWriter.write(candidate, profile),
+    }));
+
+  return { anchor, entries };
 }

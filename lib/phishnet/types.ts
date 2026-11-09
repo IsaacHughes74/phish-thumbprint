@@ -14,6 +14,10 @@ export interface ShowRecord {
   city: string;
   state: string;
   country?: string;
+  /** Tour id (docs.phish.net §shows `tourid`). */
+  tourid?: number | string;
+  /** Tour name (docs.phish.net §shows `tour_name`). */
+  tour_name?: string;
   [key: string]: unknown;
 }
 

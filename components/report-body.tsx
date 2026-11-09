@@ -1,7 +1,7 @@
 import type { ShowHistoryRow } from '../lib/history-core';
 import { toMMDDYY } from '../lib/phishnet/search';
-import { getTailoredPicks } from '../lib/recommend';
-import type { TailoredPick } from '../lib/recommend-core';
+import { getChaseList, getTailoredPicks } from '../lib/recommend';
+import type { ChaseAnchor, ChaseEntry, TailoredPick } from '../lib/recommend-core';
 import { getReport } from '../lib/stats';
 import type { TrendBucket, TrendSong } from '../lib/stats-core';
 import { ShowHistoryStrip } from './show-history-strip';
@@ -17,6 +17,7 @@ const SECTIONS: SectionNavItem[] = [
   { id: 'setlist-trends', label: 'Setlist trends' },
   { id: 'venues', label: 'Venues' },
   { id: 'tailored-picks', label: 'Tailored Picks' },
+  { id: 'chase-list', label: 'Chase List' },
 ];
 
 const MOST_HEARD_LIMIT = 8;
@@ -123,21 +124,52 @@ function TailoredPickRow({ pick }: { pick: TailoredPick }) {
   );
 }
 
+function ChaseEntryRow({ entry }: { entry: ChaseEntry }) {
+  return (
+    <div className="chase-entry">
+      <p className="chase-entry__tag">Chase</p>
+      <span className="chase-entry__title">{entry.song}</span>
+      <p className="chase-entry__why">{entry.why}</p>
+    </div>
+  );
+}
+
+/** The anchor note for the Chase List `StatCard` `sub` (DESIGN §chase-list-card). */
+function chaseAnchorSub(anchor: ChaseAnchor): string | undefined {
+  switch (anchor.kind) {
+    case 'show': {
+      const parts = ['Next show', anchor.venue, toMMDDYY(anchor.showdate)].filter(
+        (part) => part.length > 0,
+      );
+      return parts.join(' \u00B7 ');
+    }
+    case 'tour':
+      return anchor.tourName
+        ? `Songs to chase this tour \u00B7 ${anchor.tourName}`
+        : 'Songs to chase this tour';
+    case 'none':
+      return undefined;
+  }
+}
+
 interface ReportBodyProps {
   history: ShowHistoryRow[];
 }
 
 /**
- * The Report surface (CAP-3 / CAP-4 / FR-9..17): hero, stat-band, sticky
+ * The Report surface (CAP-3 / CAP-4 / CAP-5 / FR-9..19): hero, stat-band, sticky
  * section-nav, and the two-rail grid of stat-card modules (including Tailored
- * Picks). Server-rendered; derives stats from `getReport` and picks from
- * `getTailoredPicks` (AD-2 / AD-4), then hands plain data to the client islands
- * (song-row expand, section-nav scroll-spy) as props (AD-1).
+ * Picks and the Chase List). Server-rendered; derives stats from `getReport`,
+ * picks from `getTailoredPicks`, and the Chase List from `getChaseList` (AD-2 /
+ * AD-4), then hands plain data to the client islands (song-row expand,
+ * section-nav scroll-spy) as props (AD-1).
  */
 export async function ReportBody({ history }: ReportBodyProps) {
   const { report, degraded: reportDegraded } = await getReport(history);
   const { picks, degraded: picksDegraded } = await getTailoredPicks(history);
-  const degraded = reportDegraded || picksDegraded;
+  const { anchor: chaseAnchor, entries: chaseEntries, degraded: chaseDegraded } =
+    await getChaseList(history);
+  const degraded = reportDegraded || picksDegraded || chaseDegraded;
 
   const earliest = history[history.length - 1];
   const since = earliest ? toMMDDYY(earliest.showDate) : null;
@@ -292,6 +324,24 @@ export async function ReportBody({ history }: ReportBodyProps) {
               </ModuleEmpty>
             ) : (
               picks.map((pick) => <TailoredPickRow key={pick.songid} pick={pick} />)
+            )}
+          </StatCard>
+
+          <StatCard
+            id="chase-list"
+            title="Chase List"
+            sub={chaseAnchorSub(chaseAnchor)}
+          >
+            {chaseEntries.length === 0 ? (
+              <ModuleEmpty>
+                {chaseAnchor.kind === 'none'
+                  ? 'No upcoming show on file \u2014 check back closer to tour dates.'
+                  : 'No songs to chase \u2014 you\u2019ve caught everything on the horizon.'}
+              </ModuleEmpty>
+            ) : (
+              chaseEntries.map((entry) => (
+                <ChaseEntryRow key={entry.songid} entry={entry} />
+              ))
             )}
           </StatCard>
         </div>

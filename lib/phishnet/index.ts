@@ -44,12 +44,14 @@ export function getShowsCatalog(): Promise<ShowRecord[]> {
  * The full Phish song catalog, ordered by recency (server-only, cached ≤24h).
  * Serves the never-heard derivation: one cached request, filtered in-process
  * against the Phan's heard set (AD-2), never a per-song phish.net call.
+ * Unfiltered on purpose — the `songs` method's `artist` filter returns nothing
+ * (verified live), so we fetch the whole catalog instead.
  */
 export function getSongsCatalog(): Promise<SongRecord[]> {
   return getPathCached(
     'songs',
-    'artist',
-    'phish',
+    '',
+    '',
     { order_by: 'last_played', direction: 'DESC' },
     proxyDeps,
   ) as Promise<SongRecord[]>;

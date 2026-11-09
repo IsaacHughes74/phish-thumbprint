@@ -963,21 +963,21 @@ body {
   margin-top: var(--space-2);
 }
 
-/* varied hand-cut tilt (DESIGN.md §Shapes) */
+/* varied hand-cut tilt (DESIGN.md §Shapes) — dialed back from the original ±2° */
 .stat-band__cell:nth-child(1) {
-  transform: rotate(-2.2deg);
+  transform: rotate(-1.1deg);
 }
 
 .stat-band__cell:nth-child(2) {
-  transform: rotate(1.8deg);
+  transform: rotate(0.9deg);
 }
 
 .stat-band__cell:nth-child(3) {
-  transform: rotate(-1.6deg);
+  transform: rotate(-0.8deg);
 }
 
 .stat-band__cell:nth-child(4) {
-  transform: rotate(2.4deg);
+  transform: rotate(1.2deg);
 }
 
 /* ---------- section nav (sticky) ---------- */

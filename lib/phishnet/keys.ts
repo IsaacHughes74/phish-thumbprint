@@ -20,8 +20,9 @@ export function canonicalizeParams(params: Record<string, string>): string {
 }
 
 /**
- * Build the phish.net v5 request path for a single-column exact match:
- * `/{method}/{column}/{value}.json` plus any canonical order params.
+ * Build the phish.net v5 request path for a single-column exact match
+ * (`/{method}/{column}/{value}.json`) or an unfiltered method call
+ * (`/{method}.json`) when `column` is empty — plus any canonical order params.
  */
 export function buildRequestPath(
   method: string,
@@ -30,7 +31,8 @@ export function buildRequestPath(
   params: Record<string, string> = {},
 ): string {
   const query = canonicalizeParams(params);
-  return `/${method}/${column}/${value}.json${query ? `?${query}` : ''}`;
+  const segment = column ? `/${column}/${value}` : '';
+  return `/${method}${segment}.json${query ? `?${query}` : ''}`;
 }
 
 /**

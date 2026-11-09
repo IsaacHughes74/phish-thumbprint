@@ -189,8 +189,7 @@ export async function ReportBody({ history }: ReportBodyProps) {
 
       <div className="report-hero">
         <h1 className="report-hero__title">
-          Hey &mdash; <em>{formatNumber(showCount)} show{showCount === 1 ? '' : 's'}</em>, all of it
-          here.
+          <em>{formatNumber(showCount)} show{showCount === 1 ? '' : 's'}</em>
         </h1>
         {since ? (
           <p className="report-hero__meta">
@@ -215,7 +214,7 @@ export async function ReportBody({ history }: ReportBodyProps) {
         <div className="report-grid__main">
           <StatCard id="most-heard" title="Most-heard songs" sub="the songs you've heard most often">
             {report.mostHeard.length === 0 ? (
-              <ModuleEmpty>No songs to rank yet &mdash; add a show and we&rsquo;ll start.</ModuleEmpty>
+              <ModuleEmpty>No songs to rank yet &mdash; add a show to start.</ModuleEmpty>
             ) : (
               <>
                 {report.mostHeard.slice(0, MOST_HEARD_LIMIT).map((song, index) => (
@@ -278,10 +277,7 @@ export async function ReportBody({ history }: ReportBodyProps) {
         <div className="report-grid__side">
           <StatCard id="never-heard" title="Never-heard songs" sub="by chaseability">
             {report.neverHeard.length === 0 ? (
-              <ModuleEmpty>
-                You&rsquo;ve caught everything on your radar &mdash; new bust-outs gap back in
-                automatically.
-              </ModuleEmpty>
+              <ModuleEmpty>No unplayed songs &mdash; new bust-outs surface automatically.</ModuleEmpty>
             ) : (
               <>
                 <div className="chip-list">
@@ -319,9 +315,7 @@ export async function ReportBody({ history }: ReportBodyProps) {
 
           <StatCard id="tailored-picks" title="Tailored Picks">
             {picks.length === 0 ? (
-              <ModuleEmpty>
-                No picks yet &mdash; keep logging shows and they&rsquo;ll surface.
-              </ModuleEmpty>
+              <ModuleEmpty>No picks yet &mdash; add more shows and they&rsquo;ll surface.</ModuleEmpty>
             ) : (
               picks.map((pick) => <TailoredPickRow key={pick.songid} pick={pick} />)
             )}
@@ -335,8 +329,8 @@ export async function ReportBody({ history }: ReportBodyProps) {
             {chaseEntries.length === 0 ? (
               <ModuleEmpty>
                 {chaseAnchor.kind === 'none'
-                  ? 'No upcoming show on file \u2014 check back closer to tour dates.'
-                  : 'No songs to chase \u2014 you\u2019ve caught everything on the horizon.'}
+                  ? 'No upcoming show \u2014 check back closer to tour dates.'
+                  : 'No songs to chase.'}
               </ModuleEmpty>
             ) : (
               chaseEntries.map((entry) => (

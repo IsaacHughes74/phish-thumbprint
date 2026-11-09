@@ -23,6 +23,13 @@ test('buildRequestPath ignores empty order params', () => {
   );
 });
 
+test('buildRequestPath omits the column/value segment for an unfiltered call', () => {
+  assert.equal(
+    buildRequestPath('songs', '', '', { order_by: 'last_played', direction: 'DESC' }),
+    '/songs.json?direction=DESC&order_by=last_played',
+  );
+});
+
 test('pathCacheKey is a method-prefixed sha256 of the full path', () => {
   const key = pathCacheKey('setlists', 'showid', '123');
   assert.match(key, /^setlists:[0-9a-f]{64}$/);

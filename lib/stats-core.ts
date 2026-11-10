@@ -14,11 +14,13 @@ import type { SetlistRow, SongRecord } from './phishnet/types';
  * `phishnet_venue_id`, "heard live" = setlist row count, "unique songs" =
  * distinct song ids (ARCHITECTURE-SPINE §Consistency).
  *
- * Set/position encoding (verified against phish.net v5): opener = position 1 of
- * set "1"; second-set opener = position 1 of set "2"; closer = max position of
- * a numbered set; encore = any row in set "E" (or "E2", …). "shows by year" keys
- * on the 4-digit year of `show_date`; "shows by tour" keys on a Setlist row's
- * `tourname`, bucketing a Show with no Setlist (or no tour name) as "Unknown".
+ * Set/position encoding (verified live): `position` runs *continuous* across a
+ * show, so an opener is the lowest-`position` row of its set (set "1" for
+ * openers, set "2" for second-set openers), a closer is the highest-`position`
+ * row of each numbered set, and an encore is any row whose set starts with "E"
+ * (phish.net lowercases it to "e"). "shows by year" keys on the 4-digit year of
+ * `show_date`; "shows by tour" keys on a Setlist row's `tourname`, bucketing a
+ * Show with no Setlist (or no tour name) as "Unknown".
  */
 
 export interface ShowOccurrence {
@@ -172,6 +174,41 @@ function setClosers(rows: SetlistRow[]): SetlistRow[] {
   return closers;
 }
 
+/** The opener of each numbered set: the row with the min numeric position. */
+function setOpeners(rows: SetlistRow[]): SetlistRow[] {
+  const bySet = new Map<string, SetlistRow[]>();
+  for (const row of rows) {
+    const set = toStr(row.set);
+    if (!set || !isNumberedSet(set)) {
+      continue;
+    }
+    const list = bySet.get(set);
+    if (list) {
+      list.push(row);
+    } else {
+      bySet.set(set, [row]);
+    }
+  }
+
+  const openers: SetlistRow[] = [];
+  for (const list of bySet.values()) {
+    let best: SetlistRow | null = null;
+    let bestPos = Number.POSITIVE_INFINITY;
+    for (const row of list) {
+      const pos = toNum(row.position);
+      if (pos === null || pos >= bestPos) {
+        continue;
+      }
+      bestPos = pos;
+      best = row;
+    }
+    if (best) {
+      openers.push(best);
+    }
+  }
+  return openers;
+}
+
 /**
  * Derive the full Report from Show History + Setlist rows + the song catalog.
  * `setlistsByShow` maps a phish.net show id to its cached rows (possibly `[]`).
@@ -241,21 +278,29 @@ export function computeReport(
         }
       }
 
-      const position = toNum(row.position);
       const set = toStr(row.set);
 
       if (tourname === '') {
         tourname = toStr(row.tourname);
       }
 
-      if (set === '1' && position === 1) {
-        bump(openers, songid, song);
-      }
-      if (set === '2' && position === 1) {
-        bump(secondSetOpeners, songid, song);
-      }
       if (isEncoreSet(set)) {
         bump(encores, songid, song);
+      }
+    }
+
+    for (const opener of setOpeners(rows)) {
+      const set = toStr(opener.set);
+      const songid = toStr(opener.songid);
+      if (!songid) {
+        continue;
+      }
+      const song = toStr(opener.song) || '(unknown song)';
+      if (set === '1') {
+        bump(openers, songid, song);
+      }
+      if (set === '2') {
+        bump(secondSetOpeners, songid, song);
       }
     }
 

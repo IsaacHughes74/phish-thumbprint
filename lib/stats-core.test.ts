@@ -211,6 +211,28 @@ test('trends derive openers, closers, encores, and second-set openers', () => {
   );
 });
 
+test('trends handle continuous position (set 2 opener is the min position)', () => {
+  const history = [show('s1', '2026-07-25', 'v1', 'Madison Square Garden')];
+  const setlists = {
+    s1: [
+      setlistRow('s1', 'a', 'Back in the U.S.S.R.', 1, '1'),
+      setlistRow('s1', 'b', 'Simple', 5, '1'),
+      setlistRow('s1', 'c', 'Highway to Hell', 6, '2'),
+      setlistRow('s1', 'd', 'The Squirming Coil', 20, '2'),
+      setlistRow('s1', 'e', 'Tweezer Reprise', 22, 'e'),
+    ],
+  };
+  const report = computeReport(history, setlists, [], 50);
+
+  assert.deepEqual(report.trends.openers.map((t) => t.song), ['Back in the U.S.S.R.']);
+  assert.deepEqual(report.trends.secondSetOpeners.map((t) => t.song), ['Highway to Hell']);
+  assert.deepEqual(report.trends.closers.map((t) => [t.song, t.count]), [
+    ['Simple', 1],
+    ['The Squirming Coil', 1],
+  ]);
+  assert.deepEqual(report.trends.encores.map((t) => t.song), ['Tweezer Reprise']);
+});
+
 test('shows by year keys on the show_date year', () => {
   const history = [
     show('s1', '2024-08-01', 'v1', 'A'),
